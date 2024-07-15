@@ -3,10 +3,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use async_compression::{
-    tokio::{bufread::ZstdDecoder, write::ZstdEncoder},
-    Level,
-};
+use async_compression::tokio::{bufread::ZstdDecoder, write::GzipEncoder};
 use json::{object, parse, stringify};
 use tokio::{
     fs::{read_dir, File},
@@ -53,7 +50,9 @@ async fn stream_files(files: Vec<PathBuf>) -> mpsc::Receiver<String> {
         tokio::spawn(async move {
             while let Ok(s) = rx.recv().await {
                 for s in crate::clean_seq::clean_seq(&s) {
-                    txf.send(s).await?;
+                    if s.len() > 20 {
+                        txf.send(s).await?;
+                    }
                 }
             }
             anyhow::Ok(())
@@ -72,11 +71,11 @@ async fn main_inner() -> anyhow::Result<()> {
     }
     let mut frx = stream_files(files).await;
     let f = File::create(format!(
-        "output/{}.jsonl.zstd",
+        "output/{}.jsonl.gz",
         SystemTime::now().duration_since(UNIX_EPOCH)?.as_micros()
     ))
     .await?;
-    let mut f = ZstdEncoder::with_quality(BufWriter::new(f), Level::Default);
+    let mut f = GzipEncoder::new(BufWriter::new(f));
     while let Some(s) = frx.recv().await {
         f.write_all(
             stringify(object! {
