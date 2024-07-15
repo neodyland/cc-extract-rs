@@ -6,7 +6,7 @@ static RE_IMG: Lazy<Regex> =
 
 fn line_clean(line: &str) -> Option<String> {
     let tl = line.trim();
-    if tl.len() > 5 && tl.ends_with("。") {
+    if tl.len() > 5 && tl.ends_with('。') {
         Some(line.to_string())
     } else {
         None
@@ -21,13 +21,11 @@ pub fn clean_seq(s: &str) -> Vec<String> {
     let mut r = vec![];
     let mut cur = String::new();
     let mut sep = 0;
-    for s in s.split("\n").map(line_clean) {
+    for s in s.split('\n').map(line_clean) {
         if let Some(s) = s {
-            if sep > 3 {
-                if !cur.is_empty() {
-                    r.push(cur.trim().to_string());
-                    cur.clear();
-                }
+            if sep > 8 && !cur.is_empty() {
+                r.push(cur.trim().to_string());
+                cur.clear();
             }
             cur.push_str(&format!("\n{}", s));
             sep = 0;

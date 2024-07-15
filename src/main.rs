@@ -50,7 +50,7 @@ async fn stream_files(files: Vec<PathBuf>) -> mpsc::Receiver<String> {
         tokio::spawn(async move {
             while let Ok(s) = rx.recv().await {
                 for s in crate::clean_seq::clean_seq(&s) {
-                    if s.len() > 20 {
+                    if s.char_indices().collect::<Vec<_>>().len() > 50 {
                         txf.send(s).await?;
                     }
                 }
